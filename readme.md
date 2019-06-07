@@ -83,3 +83,12 @@ Don't look at that example too long. You'll hurt your eyes.
   - Test programs were never loaded into the interpreter.
 
 Very fun challenge, glad I had an excuse to try it.
+
+# Addendum
+
+Some time after wrapping up the challenge, I made a couple changes in order to verify fixed point
+combinator support:
+
+- Add function `should_continue` in to check whether a program is completed (needed for testing).
+- Add test to make sure the y-combinator works as expected (it does).
+- Add a few more miscellaneous tests.

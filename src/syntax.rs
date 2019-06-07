@@ -2,13 +2,13 @@ use crate::lambda_calculus::{Call, Expr, Lambda, Var};
 use serde_json::Value;
 
 #[derive(Clone, PartialEq, Debug)]
-enum Sexpr {
+pub enum Sexpr {
     String(String),
     Sexprs(Vec<Sexpr>),
 }
 
 impl Sexpr {
-    fn from_json(json: &Value) -> Result<Sexpr, String> {
+    pub fn from_json(json: &Value) -> Result<Sexpr, String> {
         let ret = match json {
             Value::Array(vals) => Sexpr::Sexprs(
                 vals.iter()
@@ -22,7 +22,7 @@ impl Sexpr {
     }
 
     /// uncurries function applications and lambdas
-    fn desugar(&self) -> Result<Expr, String> {
+    pub fn desugar(&self) -> Result<Expr, String> {
         match self {
             Sexpr::String(name) => Ok(Expr::Var(Var {
                 name: name.to_string(),
@@ -163,5 +163,49 @@ mod tests {
             desu(&json!(["a", "b", "c", "d", "=>", "d", "d"])).unwrap(),
             desu(&json!([["a", "b"], ["c", ["d", "=>", ["d", "d"]]]])).unwrap()
         );
+    }
+
+    #[test]
+    fn parse2() {
+        assert_eq!(
+            desu(&json!("candy")).unwrap(),
+            desu(&json!(["candy"])).unwrap()
+        );
+    }
+
+    #[test]
+    fn desugary() {
+        let y1 = json!([
+            "f",
+            "=>",
+            [["x", "=>", ["f", "x", "x"]], ["x", "=>", ["f", "x", "x"]],]
+        ]);
+        let y2 = json!([
+            "f",
+            "=>",
+            ["x", "=>", "f", "x", "x"],
+            ["x", "=>", "f", "x", "x"]
+        ]);
+        assert_eq!(desu(&y1).unwrap(), desu(&y2).unwrap());
+        let y3 = json!([
+            "f",
+            "=>",
+            ["x", "=>", "f", "x", "x"],
+            "x",
+            "=>",
+            "f",
+            "x",
+            "x"
+        ]); // defacto behavior, not as readable
+        assert_eq!(desu(&y2).unwrap(), desu(&y3).unwrap());
+    }
+
+    #[test]
+    fn deugaro() {
+        let o1 = json!([["arg", "=>", ["arg", "arg"]], ["arg", "=>", ["arg", "arg"]]]);
+        let o2 = json!([["arg", "=>", "arg", "arg"], ["arg", "=>", "arg", "arg"]]);
+        assert_eq!(desu(&o1).unwrap(), desu(&o2).unwrap());
+        let o3 = json!([["arg", "=>", "arg", "arg"], "arg", "=>", "arg", "arg"]); // defacto behavior, not as readable
+        assert_eq!(desu(&o2).unwrap(), desu(&o3).unwrap());
     }
 }
